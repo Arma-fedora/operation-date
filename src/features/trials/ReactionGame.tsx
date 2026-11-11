@@ -15,6 +15,10 @@ interface Spot {
   y: number
 }
 
+function randomBetween(min: number, max: number): number {
+  return min + Math.random() * (max - min)
+}
+
 export function ReactionGame() {
   const progress = useGameStore((state) => state.trials)
   const setTrialResult = useGameStore((state) => state.setTrialResult)
@@ -59,12 +63,10 @@ export function ReactionGame() {
     setRound(nextRoundNumber)
     setPhase('waiting')
     setMessage(REACTION_CONFIG.waiting)
-    // oxlint-disable-next-line react/purity -- random delay is chosen in an event/timer handler, not during render
-    const delay =
-      REACTION_CONFIG.minDelay + Math.random() * (REACTION_CONFIG.maxDelay - REACTION_CONFIG.minDelay)
+    const delay = randomBetween(REACTION_CONFIG.minDelay, REACTION_CONFIG.maxDelay)
     timers.current.push(
       window.setTimeout(() => {
-        setSpot({ x: 14 + Math.random() * 68, y: 18 + Math.random() * 58 })
+        setSpot({ x: randomBetween(14, 82), y: randomBetween(18, 76) })
         startAt.current = performance.now()
         setPhase('target')
         setMessage('Палыч здесь. Нажмите на него.')
