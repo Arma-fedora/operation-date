@@ -1,0 +1,2 @@
+# Drop your photos here and point `src/config/gallery.config.ts` at them.
+# Example: src: '/assets/custom/photos/first-walk.webp'

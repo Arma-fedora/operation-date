@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="13" fill="#080a09"/>
+  <rect x="3.5" y="3.5" width="57" height="57" rx="10" fill="none" stroke="#c7a15c" stroke-opacity=".55"/>
+  <path d="M10 14h6M10 14v6M54 50h-6M54 50v-6" stroke="#c8f36a" stroke-width="1.5" fill="none" opacity=".7"/>
+  <circle cx="32" cy="32" r="18" fill="none" stroke="#ece4d2" stroke-opacity=".14" stroke-dasharray="2 3"/>
+  <text x="32" y="37.5" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" font-weight="700" letter-spacing="0.5" fill="#ece4d2">01:03</text>
+  <circle cx="32" cy="47" r="1.6" fill="#b73d29"/>
+</svg>

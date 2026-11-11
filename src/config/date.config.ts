@@ -1,0 +1,87 @@
+import type { DateConfig } from '../types/config'
+
+export const DATE_CONFIG: DateConfig = {
+  mapCenter: [55.7558, 37.6173],
+  zoom: 12,
+  disclaimer:
+    'Это демонстрационные точки, а не реальные заведения. Настоящие места добавляются в src/config/date.config.ts: название, адрес, координаты и isDemo: false. Маршрут на карте — схема, а не навигация.',
+  venues: [
+    {
+      id: 'demo-cafe',
+      title: 'Кофейня без вывески',
+      description: 'Демо-точка. Тут хорошо начинать разговор, который потом свернёт не туда.',
+      coords: [55.7601, 37.6184],
+      isDemo: true,
+      tags: ['кафе', 'разговор', 'старт'],
+      duration: '45–60 мин',
+    },
+    {
+      id: 'demo-walk',
+      title: 'Набережная для разговоров',
+      description: 'Демо-точка. Маршрут без цели, зато с видом. Идеально для плана Б.',
+      coords: [55.7495, 37.609],
+      isDemo: true,
+      tags: ['прогулка', 'воздух'],
+      duration: '30–90 мин',
+    },
+    {
+      id: 'demo-billiards',
+      title: 'Бильярдная с подозрительным кием',
+      description: 'Демо-точка. Здесь можно выяснить, кто из вас хуже проигрывает.',
+      coords: [55.764, 37.605],
+      isDemo: true,
+      tags: ['бильярд', 'игра'],
+      duration: '60–90 мин',
+    },
+    {
+      id: 'demo-event',
+      title: 'Место странного мероприятия',
+      description: 'Демо-точка. Что именно там происходит — зависит от настроения и расписания.',
+      coords: [55.7558, 37.6173],
+      isDemo: true,
+      tags: ['необычное', 'впечатление'],
+      duration: '60–120 мин',
+    },
+    {
+      id: 'demo-surprise',
+      title: 'Точка «Сюрприз»',
+      description: 'Демо-точка. Содержимое сюрприза остаётся секретным даже от архива.',
+      coords: [55.752, 37.592],
+      isDemo: true,
+      tags: ['сюрприз', 'финал'],
+      duration: 'по обстоятельствам',
+    },
+    {
+      id: 'demo-dessert',
+      title: 'Десерт на десерт',
+      description: 'Демо-точка. Логичный финал для вечера, который не хочется заканчивать.',
+      coords: [55.746, 37.62],
+      isDemo: true,
+      tags: ['кафе', 'десерт', 'финал'],
+      duration: '30–45 мин',
+    },
+  ],
+  scenarios: [
+    {
+      id: 'classic',
+      title: 'Классика без галстука',
+      description: 'Кофе, прогулка, десерт. Минимум пафоса, максимум пространства для разговора.',
+      stops: ['demo-cafe', 'demo-walk', 'demo-dessert'],
+      vibe: 'classic',
+    },
+    {
+      id: 'adventure',
+      title: 'Авантюра',
+      description: 'Странное мероприятие, бильярд и точка «Сюрприз». Для тех, кто считает план Б основным.',
+      stops: ['demo-event', 'demo-billiards', 'demo-surprise'],
+      vibe: 'adventure',
+    },
+    {
+      id: 'quiet',
+      title: 'Тихий вечер',
+      description: 'Прогулка, кофейня и десерт. Если хочется, чтобы вечер шёл медленно и не спрашивал разрешения.',
+      stops: ['demo-walk', 'demo-cafe', 'demo-dessert'],
+      vibe: 'quiet',
+    },
+  ],
+}

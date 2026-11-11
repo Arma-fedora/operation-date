@@ -1,0 +1,99 @@
+import type { GalleryItem } from '../types/config'
+
+export const GALLERY_ITEMS: GalleryItem[] = [
+  {
+    id: 'case-photo',
+    title: 'Фото с места происшествия',
+    alt: 'Стилизованный стол с лампой и бумагами',
+    caption:
+      'Стол, лампа, бумаги. Ничего необычного, если не считать того, что всё это появилось в 01:03.',
+    kind: 'photo',
+    unlock: { type: 'always' },
+    order: 1,
+    aspect: 'landscape',
+    note: 'Слот для вашей фотографии: public/assets/custom/photos/',
+  },
+  {
+    id: 'meme-0103',
+    title: 'Мем №0103',
+    alt: 'Абстрактная карточка с надписью 01:03',
+    caption:
+      'Разрешён к распространению только среди участников операции. Все остальные увидят просто часы.',
+    kind: 'meme',
+    unlock: { type: 'evidence', id: 'ev-chronology' },
+    order: 2,
+    aspect: 'square',
+    note: 'Слот для мема: public/assets/custom/memes/',
+  },
+  {
+    id: 'cipher-doc',
+    title: 'Фрагмент шифра',
+    alt: 'Документ с рядами чисел',
+    caption: '12 · 1 · 15 · 1 · 13. Кто-то очень старался выглядеть загадочно. Получилось.',
+    kind: 'document',
+    unlock: { type: 'evidence', id: 'ev-cipher' },
+    order: 3,
+    aspect: 'portrait',
+    note: 'Слот для документа: public/assets/custom/photos/',
+  },
+  {
+    id: 'pigeon',
+    title: 'Голубь Палыч',
+    alt: 'Портрет голубя в шляпе',
+    caption:
+      'Ценный свидетель. Отказался от показаний, но согласился на фотосессию. Гонорар — крошки.',
+    kind: 'photo',
+    unlock: { type: 'secret', id: 'pigeon' },
+    order: 4,
+    aspect: 'portrait',
+    note: 'Слот для фото голубя: public/assets/custom/memes/',
+  },
+  {
+    id: 'mikhaylych',
+    title: 'Архивный портрет Михалыча',
+    alt: 'Силуэт человека в кепке на фоне помех',
+    caption:
+      'Лицо не оцифровано. Слышно только голос: «Не говори заказчику, что я так сказал».',
+    kind: 'secret',
+    unlock: { type: 'secret', id: 'mikhaylych-secret' },
+    order: 5,
+    aspect: 'square',
+    note: 'Слот для портрета: public/assets/custom/characters/mikhaylych/',
+  },
+  {
+    id: 'red-folder',
+    title: 'Красная папка',
+    alt: 'Красная папка с надписью «Не открывать»',
+    caption:
+      'На папке написано «Не открывать». Внутри — записка «Спасибо, что открыли». Архив умеет в иронию.',
+    kind: 'secret',
+    unlock: { type: 'secret', id: 'red-folder' },
+    order: 6,
+    aspect: 'landscape',
+    note: 'Секретный слот. Открывается скрытой кнопкой в архиве.',
+  },
+  {
+    id: 'stamp-0103',
+    title: 'Печать 01:03',
+    alt: 'Круглая печать с временем 01:03',
+    caption:
+      'Служебная печать. Официально её не существует. Неофициально — она здесь, и вы её видите.',
+    kind: 'document',
+    unlock: { type: 'secret', id: 'hidden-stamp' },
+    order: 7,
+    aspect: 'square',
+    note: 'Секретный слот. Ищите на доске улик.',
+  },
+  {
+    id: 'final-envelope',
+    title: 'Конверт до вскрытия',
+    alt: 'Конверт с сургучной печатью',
+    caption:
+      'Фотография сделана за минуту до главного. На обороте подписано: «Если ты это читаешь, значит, всё получилось».',
+    kind: 'photo',
+    unlock: { type: 'screen', screen: 'final' },
+    order: 8,
+    aspect: 'landscape',
+    note: 'Слот для финального фото: public/assets/custom/photos/',
+  },
+]

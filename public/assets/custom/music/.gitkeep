@@ -1,0 +1,4 @@
+# Optional audio files.
+# Put MP3/OGG files here and set `src` on the matching track in
+# src/config/music.config.ts, e.g. src: '/assets/custom/music/night.mp3'.
+# Tracks without `src` use the built-in Web Audio ambient fallback.

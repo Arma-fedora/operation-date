@@ -1,0 +1,3 @@
+# Optional Mikhaylych portrait.
+# Put the file here, then set CHARACTER_ASSETS.mikhaylychPortrait.src in
+# src/config/characters.config.ts to '/assets/custom/characters/mikhaylych/portrait.webp'
