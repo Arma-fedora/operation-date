@@ -30,9 +30,13 @@ npm run dev
 npm run typecheck   # TypeScript
 npm run lint        # oxlint
 npm test            # vitest
+npm run test:e2e    # Playwright (нужен npx playwright install chromium)
 npm run build       # production build
 npm run preview     # посмотреть собранную версию
+npm run preflight   # проверка готовности к деплою
 ```
+
+Короткий чек-лист публикации — в [DEPLOY.md](./DEPLOY.md).
 
 ## 2. Создайте проект Supabase
 
