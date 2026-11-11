@@ -38,3 +38,8 @@ playwright/.cache
 *.njsproj
 *.sln
 *.sw?
+.env
+.env.*
+.vercel
+.supabase/
+supabase/.temp/
