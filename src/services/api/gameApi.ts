@@ -19,13 +19,33 @@ export function remoteAvailable(): boolean {
   return Boolean(!APP_CONFIG.demoMode && getClient() && getInitData())
 }
 
+const REQUEST_TIMEOUT_MS = 15000
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  let timer: number | undefined
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timer = window.setTimeout(() => reject(new Error(message)), timeoutMs)
+      }),
+    ])
+  } finally {
+    if (timer) window.clearTimeout(timer)
+  }
+}
+
 async function invoke<T>(action: string, payload: unknown): Promise<T> {
   const supabase = getClient()
   const initData = getInitData()
   if (!supabase || !initData) throw new Error('Remote mode is not configured')
-  const { data, error } = await supabase.functions.invoke('game-api', {
-    body: { action, initData, payload },
-  })
+  const { data, error } = await withTimeout(
+    supabase.functions.invoke('game-api', {
+      body: { action, initData, payload },
+    }),
+    REQUEST_TIMEOUT_MS,
+    'Архив не отвечает',
+  )
   if (error) throw new Error(error.message || 'Не удалось связаться с архивом')
   return data as T
 }

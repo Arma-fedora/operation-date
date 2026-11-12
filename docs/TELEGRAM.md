@@ -30,25 +30,21 @@ Chat ID этого диалога: 123456789
 
 ## 3. Задайте секреты Supabase
 
-В `supabase/.env.functions`:
+Секреты задаются прямо в Supabase — файл `supabase/.env.functions` не нужен:
 
-```env
-TELEGRAM_BOT_TOKEN=123456789:AA...
-TELEGRAM_OWNER_CHAT_ID=123456789
-TELEGRAM_WEBHOOK_SECRET=<длинная случайная строка>
-MINI_APP_URL=https://your-app.vercel.app
+```bash
+supabase secrets set \
+  TELEGRAM_BOT_TOKEN=123456789:AA... \
+  TELEGRAM_OWNER_CHAT_ID=123456789 \
+  TELEGRAM_ALLOWED_USER_IDS=123456789 \
+  TELEGRAM_WEBHOOK_SECRET=<длинная случайная строка> \
+  MINI_APP_URL=https://your-app.netlify.app
 ```
 
 Секрет можно сгенерировать так:
 
 ```bash
 openssl rand -base64 48
-```
-
-Загрузите:
-
-```bash
-supabase secrets set --env-file supabase/.env.functions
 ```
 
 Проверьте, что `MINI_APP_URL` — публичный HTTPS-адрес. Telegram не открывает `http://` и `localhost`.
@@ -59,7 +55,7 @@ supabase secrets set --env-file supabase/.env.functions
 
 ```env
 TELEGRAM_BOT_TOKEN=123456789:AA...
-MINI_APP_URL=https://your-app.vercel.app
+MINI_APP_URL=https://your-app.netlify.app
 TELEGRAM_WEBHOOK_URL=https://<project-ref>.supabase.co/functions/v1/telegram-webhook
 TELEGRAM_WEBHOOK_SECRET=<тот же секрет, что в Supabase>
 ```

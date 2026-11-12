@@ -40,6 +40,12 @@ playwright/.cache
 *.sw?
 .env
 .env.*
+!.env.example
+!.env.setup.example
+supabase/.env.functions
+!supabase/.env.functions.example
 .vercel
+.netlify/
 .supabase/
 supabase/.temp/
+dist.zip

@@ -64,12 +64,26 @@ function requireValue(name) {
   return ''
 }
 
+/**
+ * Secrets for Edge Functions live in Supabase, not in the repo.
+ * Local values are optional: when present we validate their shape.
+ */
+function optionalSecret(name) {
+  const current = value(name)
+  if (current) {
+    ok(`${name} задан локально`)
+    return current
+  }
+  warn(`${name} не задан локально — проверьте его в секретах Supabase (supabase secrets list)`)
+  return ''
+}
+
 const supabaseUrl = requireValue('VITE_SUPABASE_URL')
 const anonKey = requireValue('VITE_SUPABASE_ANON_KEY')
-const botToken = requireValue('TELEGRAM_BOT_TOKEN')
-const ownerChatId = requireValue('TELEGRAM_OWNER_CHAT_ID')
-const webhookSecret = requireValue('TELEGRAM_WEBHOOK_SECRET')
-const miniAppUrl = requireValue('MINI_APP_URL')
+const botToken = optionalSecret('TELEGRAM_BOT_TOKEN')
+const ownerChatId = optionalSecret('TELEGRAM_OWNER_CHAT_ID')
+const webhookSecret = optionalSecret('TELEGRAM_WEBHOOK_SECRET')
+const miniAppUrl = optionalSecret('MINI_APP_URL')
 
 if (supabaseUrl) {
   try {
@@ -119,17 +133,37 @@ for (const [label, file] of [
   ['миграция', 'supabase/migrations/0001_init.sql'],
   ['game-api', 'supabase/functions/game-api/index.ts'],
   ['telegram-webhook', 'supabase/functions/telegram-webhook/index.ts'],
-  ['Vercel config', 'vercel.json'],
+  ['Netlify SPA fallback', 'public/_redirects'],
+  ['Netlify headers', 'public/_headers'],
+  ['Telegram WebApp SDK', 'public/vendor/telegram-web-app.js'],
   ['пример секретов функций', 'supabase/.env.functions.example'],
 ]) {
   if (existsSync(resolve(root, file))) ok(`${label}: ${file}`)
   else fail(`не найден ${file}`)
 }
 
-if (!existsSync(resolve(root, 'dist/index.html'))) {
+const distIndex = resolve(root, 'dist/index.html')
+if (!existsSync(distIndex)) {
   warn('dist/index.html не найден — выполните npm run build перед публикацией')
 } else {
   ok('production build найден в dist/')
+  const built = readFileSync(distIndex, 'utf8')
+  if (built.includes('telegram.org/js/telegram-web-app.js')) {
+    fail('dist/index.html грузит telegram.org — скрипт должен лежать в /vendor/')
+  } else if (built.includes('/vendor/telegram-web-app.js')) {
+    ok('dist/index.html использует локальный /vendor/telegram-web-app.js')
+  }
+  if (built.includes('fonts.googleapis.com') || built.includes('fonts.gstatic.com')) {
+    fail('dist/index.html тянет Google Fonts — шрифты должны быть собраны локально')
+  } else {
+    ok('dist/index.html не обращается к внешним шрифтам')
+  }
+}
+
+if (existsSync(resolve(root, 'dist/vendor/telegram-web-app.js'))) {
+  ok('dist/vendor/telegram-web-app.js на месте')
+} else {
+  fail('нет dist/vendor/telegram-web-app.js — пересоберите проект')
 }
 
 for (const file of envFiles) {

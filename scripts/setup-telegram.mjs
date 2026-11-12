@@ -26,7 +26,7 @@ function fail(message) {
 }
 
 if (!token || !/^\d+:[A-Za-z0-9_-]{20,}$/.test(token)) fail('TELEGRAM_BOT_TOKEN is missing or malformed')
-if (!miniAppUrl) fail('MINI_APP_URL is missing (for example https://operation-date.vercel.app)')
+if (!miniAppUrl) fail('MINI_APP_URL is missing (for example https://operation-date.netlify.app)')
 if (!webhookUrl) fail('TELEGRAM_WEBHOOK_URL is missing (https://<ref>.supabase.co/functions/v1/telegram-webhook)')
 
 for (const [name, value] of [

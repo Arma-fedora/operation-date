@@ -1,7 +1,7 @@
 @theme {
-  --font-display: 'Unbounded', 'Arial Black', sans-serif;
+  --font-display: 'Unbounded Variable', 'Unbounded', 'Arial Black', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
-  --font-sans: 'Manrope', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Manrope Variable', 'Manrope', system-ui, -apple-system, sans-serif;
 }
 
 :root,

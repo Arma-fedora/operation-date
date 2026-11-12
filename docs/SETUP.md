@@ -7,7 +7,7 @@
 - Node.js 20+ и npm.
 - Аккаунт [Supabase](https://supabase.com).
 - Бот в Telegram, созданный через [@BotFather](https://t.me/BotFather).
-- Публичный HTTPS-хостинг для фронтенда. Инструкция использует Vercel, но подойдёт любой статический хостинг с fallback на `index.html`.
+- Публичный HTTPS-хостинг для фронтенда. Инструкция использует Netlify, но подойдёт любой статический хостинг с fallback на `index.html`.
 - Supabase CLI (можно через `npx supabase`, но глобальная установка удобнее):
 
 ```bash
@@ -98,11 +98,7 @@ supabase functions deploy telegram-webhook --no-verify-jwt
 
 ## 5. Задайте секреты функций
 
-```bash
-cp supabase/.env.functions.example supabase/.env.functions
-```
-
-Заполните:
+Секреты хранятся в Supabase, а не в файлах репозитория — `supabase/.env.functions` использовать не нужно.
 
 | Переменная | Зачем |
 |---|---|
@@ -118,7 +114,13 @@ cp supabase/.env.functions.example supabase/.env.functions
 Загрузите секреты:
 
 ```bash
-supabase secrets set --env-file supabase/.env.functions
+supabase secrets set \
+  TELEGRAM_BOT_TOKEN=<bot-token> \
+  TELEGRAM_OWNER_CHAT_ID=<chat-id> \
+  TELEGRAM_ALLOWED_USER_IDS=<id-1>,<id-2> \
+  TELEGRAM_WEBHOOK_SECRET=<secret> \
+  MINI_APP_URL=https://<your-site>.netlify.app
+
 supabase secrets list
 ```
 
@@ -149,7 +151,7 @@ supabase functions logs telegram-webhook
 
 ```bash
 TELEGRAM_BOT_TOKEN=123456:AA...
-MINI_APP_URL=https://your-app.vercel.app
+MINI_APP_URL=https://your-app.netlify.app
 TELEGRAM_WEBHOOK_URL=https://<project-ref>.supabase.co/functions/v1/telegram-webhook
 TELEGRAM_WEBHOOK_SECRET=<тот же секрет, что в Supabase>
 ```
@@ -183,14 +185,23 @@ VITE_SUPABASE_ANON_KEY=<anon-key>
 npm run build
 ```
 
-Папка `dist` — статический сайт. Для Vercel:
+Папка `dist` — статический сайт. Для Netlify:
 
 ```bash
-npx vercel
-npx vercel --prod
+npm run build
+cd dist && zip -r ../dist.zip . && cd ..
 ```
 
-В настройках проекта Vercel добавьте те же переменные `VITE_SUPABASE_URL` и `VITE_SUPABASE_ANON_KEY` для Production, затем пересоберите. `vercel.json` уже содержит SPA-rewrite на `index.html`, иначе прямые ссылки на `/final` дадут 404.
+Загрузите `dist.zip` в Netlify (drag-and-drop) или через API:
+
+```bash
+curl -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+  -H "Content-Type: application/zip" \
+  --data-binary @dist.zip \
+  "https://api.netlify.com/api/v1/sites/<site-id>/deploys"
+```
+
+Переменные `VITE_SUPABASE_URL` и `VITE_SUPABASE_ANON_KEY` запекаются в сборку на этапе `npm run build` — в панели Netlify их задавать не нужно. Файл `public/_redirects` отвечает за SPA-rewrite на `index.html`, иначе прямые ссылки на `/final` дадут 404; `public/_headers` задаёт заголовки безопасности.
 
 После деплоя:
 
@@ -248,7 +259,8 @@ order by created_at desc;
 | Прогресс не восстанавливается | `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` не попали в сборку. Проверьте, что переменные заданы на этапе build, а не только в dev. |
 | `Демо-отправка` в финале | `VITE_DEMO_MODE=true` или пустой `VITE_SUPABASE_URL`. |
 | Карта пустая | Нет интернета/тайлы OSM недоступны. В планировщике есть переключатель «схема», он работает без сети. |
-| Сайт открывается, но прямой URL даёт 404 | Не настроен SPA fallback. Для Vercel используйте `vercel.json` из репозитория. |
+| Сайт открывается, но прямой URL даёт 404 | Не настроен SPA fallback. Для Netlify используйте `public/_redirects` из репозитория. |
+| Белый экран в Telegram, в консоли нет запросов к `telegram.org` | Проверьте, что в сборке есть `dist/vendor/telegram-web-app.js` и `dist/index.html` ссылается на `/vendor/telegram-web-app.js`. Внешний скрипт Telegram блокирует рендер, пока не загрузится. |
 
 ## 11. Удаление данных
 

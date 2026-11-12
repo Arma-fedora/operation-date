@@ -46,7 +46,7 @@ npm run build
 1. Проект Supabase и применённая миграция `supabase/migrations/0001_init.sql`.
 2. Две Edge Functions: `game-api` и `telegram-webhook`.
 3. Telegram-бот, его токен, chat ID владельца и зарегистрированный webhook.
-4. Публичный HTTPS-адрес приложения (Vercel или любой статический хостинг с SPA-fallback).
+4. Публичный HTTPS-адрес приложения (Netlify или любой статический хостинг с SPA-fallback).
 
 Пошаговая инструкция: [docs/SETUP.md](docs/SETUP.md).  
 Telegram-бот и webhook: [docs/TELEGRAM.md](docs/TELEGRAM.md).  
@@ -60,11 +60,13 @@ Telegram-бот и webhook: [docs/TELEGRAM.md](docs/TELEGRAM.md).
 supabase link --project-ref <project-ref>
 supabase db push
 
-# 2. Секреты функций
-cp supabase/.env.functions.example supabase/.env.functions
-# заполнить TELEGRAM_BOT_TOKEN, TELEGRAM_OWNER_CHAT_ID,
-# TELEGRAM_WEBHOOK_SECRET, MINI_APP_URL
-supabase secrets set --env-file supabase/.env.functions
+# 2. Секреты функций (в Supabase, файлы репозитория не нужны)
+supabase secrets set \
+  TELEGRAM_BOT_TOKEN=<bot-token> \
+  TELEGRAM_OWNER_CHAT_ID=<chat-id> \
+  TELEGRAM_ALLOWED_USER_IDS=<id-1>,<id-2> \
+  TELEGRAM_WEBHOOK_SECRET=<secret> \
+  MINI_APP_URL=https://<your-site>.netlify.app
 
 # 3. Функции
 supabase functions deploy game-api
@@ -74,6 +76,7 @@ supabase functions deploy telegram-webhook
 cp .env.example .env.local
 # заполнить VITE_SUPABASE_URL и VITE_SUPABASE_ANON_KEY
 npm run build
+cd dist && zip -r ../dist.zip . && cd ..   # загрузить dist.zip в Netlify
 ```
 
 После деплоя фронтенда укажите его HTTPS-адрес в `MINI_APP_URL`, зарегистрируйте webhook скриптом `scripts/setup-telegram.mjs` и отправьте боту `/start`.
