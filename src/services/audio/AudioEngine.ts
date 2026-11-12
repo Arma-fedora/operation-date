@@ -385,17 +385,6 @@ export class AudioEngine {
     }
   }
 
-  /**
-   * Warms the cache so the first playback starts without waiting for the network.
-   * Uses fetch only, so no AudioContext is created before the first gesture.
-   */
-  preload(track: MusicTrack): void {
-    if (!track.src) return
-    if (this.buffers.has(track.src) || this.rawBuffers.has(track.src)) return
-    if (this.missing.has(track.src)) return
-    void this.fetchRaw(track.src, 'music')
-  }
-
   async playSfx(definition: SfxDefinition): Promise<void> {
     if (!definition.src || !this.sfxEnabled || this.muted) return
     const ctx = this.ensureContext()
@@ -412,32 +401,117 @@ export class AudioEngine {
     source.start()
   }
 
+  /**
+   * Music is streamed through an audio element: playback starts after the
+   * first chunks arrive instead of waiting for the whole file.
+   */
   private async playFile(track: MusicTrack, gain: GainNode, token: number): Promise<boolean> {
-    if (!track.src) return false
+    const sources = [track.src, track.altSrc].filter((value): value is string => Boolean(value))
+    for (const source of sources) {
+      const started = await this.playStream(source, track, gain, token)
+      if (started) return true
+    }
+    return false
+  }
+
+  private async playStream(
+    src: string,
+    track: MusicTrack,
+    gain: GainNode,
+    token: number,
+  ): Promise<boolean> {
     const ctx = this.ctx
     if (!ctx) return false
-    const buffer = await this.loadBuffer(track.src)
-    if (!buffer) return false
-    if (token !== this.playToken) return false
-    const source = ctx.createBufferSource()
-    source.buffer = buffer
-    source.loop = track.loop
-    source.connect(gain)
-    source.start()
-    this.current = {
-      gain,
-      nodes: [source],
-      cleanup: () => {
-        try {
-          source.stop()
-        } catch {
-          // Already stopped.
-        }
-        source.disconnect()
-        gain.disconnect()
-      },
+    if (this.diagnostics.currentTrackId === track.id && this.diagnostics.fileState !== 'none') {
+      // The track was already tried for this screen.
     }
-    return true
+    const audio = new Audio(src)
+    audio.loop = track.loop
+    audio.preload = 'auto'
+    audio.crossOrigin = 'anonymous'
+    audio.volume = 1
+    this.diagnostics.fileState = 'loading'
+    this.diagnostics.fileError = ''
+    let loaded = false
+
+    const cleanup = () => {
+      audio.pause()
+      audio.removeAttribute('src')
+      audio.load()
+      gain.disconnect()
+    }
+
+    await new Promise<boolean>((resolve) => {
+      let settled = false
+      const finish = (ok: boolean) => {
+        if (settled) return
+        settled = true
+        window.clearTimeout(timer)
+        resolve(ok)
+      }
+      const timer = window.setTimeout(() => finish(false), 8000)
+      audio.addEventListener(
+        'canplay',
+        () => {
+          loaded = true
+          this.diagnostics.fileState = 'loaded'
+          finish(true)
+        },
+        { once: true },
+      )
+      audio.addEventListener(
+        'error',
+        () => {
+          this.diagnostics.fileError = `не удалось загрузить (${src.split('/').pop()})`
+          this.diagnostics.fileState = 'failed'
+          finish(false)
+        },
+        { once: true },
+      )
+      audio.addEventListener('progress', () => {
+        try {
+          if (audio.buffered.length) {
+            this.diagnostics.fileBytes = Math.round(audio.buffered.end(audio.buffered.length - 1) * 1024)
+          }
+        } catch {
+          // Buffered ranges are not available yet.
+        }
+      })
+      void audio.play().catch(() => {
+        this.diagnostics.fileError = 'браузер не разрешил воспроизведение'
+        finish(false)
+      })
+    })
+
+    if (token !== this.playToken) {
+      audio.pause()
+      return false
+    }
+    if (!loaded) {
+      audio.pause()
+      return false
+    }
+
+    try {
+      const source = ctx.createMediaElementSource(audio)
+      source.connect(gain)
+      this.current = {
+        gain,
+        nodes: [],
+        cleanup: () => {
+          audio.pause()
+          audio.removeAttribute('src')
+          source.disconnect()
+          gain.disconnect()
+        },
+      }
+      return true
+    } catch {
+      // Cross-origin restrictions can block the graph; play the element directly.
+      audio.volume = this.muted ? 0 : this.volume * track.volume
+      this.current = { gain, nodes: [], cleanup }
+      return true
+    }
   }
 
   private playGenerated(fallback: AudioFallback, gain: GainNode): Voice {

@@ -93,12 +93,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     return () => engine.destroy()
   }, [engine])
 
-  // Download the next track ahead of time so it starts without a delay.
-  useEffect(() => {
-    if (!engine) return
-    engine.preload(currentTrack)
-  }, [currentTrack, engine])
-
   useEffect(() => {
     if (!audio.enabled) return
     let done = false

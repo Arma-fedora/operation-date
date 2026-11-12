@@ -38,6 +38,8 @@ export interface MusicTrack {
   title: string
   artist: string
   src?: string
+  /** Second source, tried when the first one fails to load. */
+  altSrc?: string
   screens: ScreenId[] | 'global'
   volume: number
   loop: boolean
@@ -63,6 +65,8 @@ export interface SfxDefinition {
   id: SfxId
   /** Path to the file in public/. Missing files stay silent instead of breaking. */
   src?: string
+  /** Second source, tried when the first one fails to load. */
+  altSrc?: string
   volume: number
 }
 

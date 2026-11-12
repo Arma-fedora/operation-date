@@ -1,4 +1,5 @@
 import type { MusicTrack } from '../types/config'
+import { mediaUrl } from './media.config'
 
 /**
  * Screen music.
@@ -12,7 +13,8 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     id: 'meme-dynasty',
     title: 'Династия',
     artist: 'Групповой чат',
-    src: '/assets/custom/music/meme-dynasty.mp3',
+    src: mediaUrl('music/meme-dynasty.mp3'),
+    altSrc: '/assets/custom/music/meme-dynasty.mp3',
     screens: ['boot'],
     volume: 0.85,
     loop: true,
