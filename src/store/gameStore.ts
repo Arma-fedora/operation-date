@@ -68,7 +68,7 @@ export function createInitialState(): GameState {
     },
     audio: {
       muted: false,
-      volume: 0.32,
+      volume: 0.45,
       enabled: true,
       sfxEnabled: true,
     },
@@ -176,6 +176,13 @@ export const useGameStore = create<GameStore>()(
 
           let next = takeProgress ? mergeProgress(state, remote) : state
 
+          // Sound on/off is a device setting, not progress: the server copy must
+          // never silence a device that has sound enabled.
+          next = {
+            ...next,
+            audio: { ...next.audio, enabled: state.audio.enabled },
+          }
+
           if (takeFinal && remoteFinal) {
             next = {
               ...next,
@@ -195,7 +202,16 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'operation-date-v1',
-      version: 1,
+      version: 2,
+      migrate: (persisted, version) => {
+        const state = (persisted ?? {}) as Partial<GameState>
+        if (version < 2) {
+          // Sound used to default to off, which left devices permanently silent.
+          const audio = { ...createInitialState().audio, ...(state.audio ?? {}) }
+          return { ...state, audio: { ...audio, enabled: true } }
+        }
+        return state
+      },
       partialize: (state) => ({
         version: state.version,
         currentScreen: state.currentScreen,

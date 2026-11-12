@@ -97,11 +97,21 @@ export function AudioProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!audio.enabled) return
+    let done = false
     const onGesture = () => {
+      if (done) return
+      done = true
       void engine.unlock().then(() => engine.play(currentTrack, audio.volume, audio.muted))
     }
+    // iOS WebView only resumes the context on a touch or click gesture.
     window.addEventListener('pointerdown', onGesture, { once: true })
-    return () => window.removeEventListener('pointerdown', onGesture)
+    window.addEventListener('touchstart', onGesture, { once: true })
+    window.addEventListener('click', onGesture, { once: true })
+    return () => {
+      window.removeEventListener('pointerdown', onGesture)
+      window.removeEventListener('touchstart', onGesture)
+      window.removeEventListener('click', onGesture)
+    }
   }, [audio.enabled, audio.muted, audio.volume, currentTrack, engine])
 
   // Every press on a control gets a click, throttled to avoid machine-gunning.

@@ -21,6 +21,12 @@ interface Preset {
   tremolo: number
 }
 
+/**
+ * The synthesized layers are ambience, not silence: without this boost they
+ * land around -50 dBFS and cannot be heard at all.
+ */
+const SYNTH_LEVEL = 16
+
 const PRESETS: Record<Exclude<AudioFallback, 'silence'>, Preset> = {
   'generated:hum': {
     oscillators: [
@@ -313,6 +319,10 @@ export class AudioEngine {
     const preset = PRESETS[fallback]
     const nodes: Array<OscillatorNode | AudioBufferSourceNode> = []
 
+    const bus = ctx.createGain()
+    bus.gain.value = SYNTH_LEVEL
+    bus.connect(gain)
+
     preset.oscillators.forEach((spec) => {
       const osc = ctx.createOscillator()
       osc.type = spec.type
@@ -321,7 +331,7 @@ export class AudioEngine {
       const oscGain = ctx.createGain()
       oscGain.gain.value = spec.gain
       osc.connect(oscGain)
-      oscGain.connect(gain)
+      oscGain.connect(bus)
       osc.start()
       nodes.push(osc)
     })
@@ -338,7 +348,7 @@ export class AudioEngine {
       noiseGain.gain.value = preset.noise
       noise.connect(filter)
       filter.connect(noiseGain)
-      noiseGain.connect(gain)
+      noiseGain.connect(bus)
       noise.start()
       nodes.push(noise)
     }
@@ -366,6 +376,7 @@ export class AudioEngine {
           }
           node.disconnect()
         })
+        bus.disconnect()
         gain.disconnect()
       },
     }
