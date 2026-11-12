@@ -258,7 +258,7 @@ export function FinalPage() {
                   <Sparkles className="mt-0.5 size-3.5 shrink-0 text-[#9b3220]" />
                   <p className="text-[11px] leading-relaxed opacity-65">
                     Сценарий: {scenario.title}. Точек в маршруте: {orderedStops.length}. Детали уточним, когда
-                    будешь готова.
+                    будешь готов.
                   </p>
                 </div>
               ) : null}

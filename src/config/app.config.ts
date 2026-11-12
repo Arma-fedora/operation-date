@@ -6,7 +6,9 @@ export const APP_CONFIG = {
   title: 'Операция: Свидание',
   shortTitle: 'ОПЕРАЦИЯ «СВИДАНИЕ»',
   caseNumber: '0103',
-  heroineName: 'Александра',
+  heroineName: 'Друг',
+  /** Genitive-dative form used in the letter: «Кому: Другу». */
+  heroineNameDative: 'Другу',
   caseTime: '01:03',
   timezone: 'Europe/Moscow',
   demoMode: env.VITE_DEMO_MODE === 'true' || !env.VITE_SUPABASE_URL,

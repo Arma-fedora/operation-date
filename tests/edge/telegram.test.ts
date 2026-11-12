@@ -30,7 +30,7 @@ function signInitData(params: Record<string, string>, token = BOT_TOKEN): string
 function baseParams(authDate = Math.floor(Date.now() / 1000)) {
   return {
     auth_date: String(authDate),
-    user: JSON.stringify({ id: 123456789, first_name: 'Александра', username: 'alex' }),
+    user: JSON.stringify({ id: 123456789, first_name: 'Друг', username: 'friend' }),
   }
 }
 
@@ -49,14 +49,14 @@ describe('verifyInitData', () => {
     const verified = await verifyInitData(initData)
 
     expect(verified.user.id).toBe(123456789)
-    expect(verified.user.first_name).toBe('Александра')
+    expect(verified.user.first_name).toBe('Друг')
     expect(verified.authDate).toBe(authDate)
     expect(verified.initDataHash).toBe(createHash('sha256').update(initData).digest('hex'))
   })
 
   it('rejects a tampered payload', async () => {
     const initData = signInitData(baseParams())
-    const tampered = initData.replace('alex', 'evil')
+    const tampered = initData.replace('friend', 'enemy')
 
     await expect(verifyInitData(tampered)).rejects.toBeInstanceOf(TelegramAuthError)
     await expect(verifyInitData(tampered)).rejects.toThrow(/signature mismatch/i)

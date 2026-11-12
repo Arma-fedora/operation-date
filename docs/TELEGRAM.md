@@ -108,7 +108,7 @@ curl "https://api.telegram.org/bot<token>/getWebhookInfo"
 
 ## 6. Финальное уведомление
 
-Когда Александра отправляет конверт, `game-api`:
+Когда игрок отправляет конверт, `game-api`:
 
 1. Проверяет `initData` и сохраняет ответ в `final_responses` со статусом `pending`.
 2. Отправляет владельцу сообщение через `sendMessage` с HTML-экранированием.
@@ -200,6 +200,6 @@ supabase functions logs telegram-webhook
 
 - Токен бота и service-role key — только в секретах Supabase. Никогда не во фронтенде.
 - Если токен утёк: BotFather → `/revoke` → получить новый токен → обновить `TELEGRAM_BOT_TOKEN` в Supabase и перерегистрировать webhook.
-- `TELEGRAM_ALLOWED_USER_IDS` ограничивает круг людей, которые могут открыть приложение. Для личного подарка это разумно: добавьте Telegram ID Александры и свой.
+- `TELEGRAM_ALLOWED_USER_IDS` ограничивает круг людей, которые могут открыть приложение. Для личного подарка это разумно: добавьте Telegram ID игрока и свой.
 - Не публикуйте ссылку на бота в открытых каналах, если не хотите посторонних прохождений.
 - Подробнее: [SECURITY.md](SECURITY.md).

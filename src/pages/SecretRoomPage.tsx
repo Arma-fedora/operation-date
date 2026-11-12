@@ -304,7 +304,7 @@ export function SecretRoomPage() {
         </Reveal>
 
         <p className="border-l border-[var(--gold)]/40 pl-3 font-mono text-[9px] uppercase leading-relaxed tracking-[0.14em] text-[var(--gold)]/70">
-          Михалыч: «Комнату нашла — молодец. Только не говори Пломбиру, что я знал, где она. У меня репутация
+          Михалыч: «Комнату нашёл — молодец. Только не говори Пломбиру, что я знал, где она. У меня репутация
           консультанта, а не завхоза».
         </p>
       </div>

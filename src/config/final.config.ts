@@ -1,3 +1,4 @@
+import { APP_CONFIG } from './app.config'
 import type { FinalResponseType } from '../types/game'
 
 export interface FinalOption {
@@ -11,7 +12,7 @@ export const FINAL_CONFIG = {
   envelopeLabel: 'ВСКРЫТЬ КОНВЕРТ',
   envelopeHint: 'Печать сломается только один раз. Но передумать — можно.',
   letterNumber: 'СЛУЖЕБНАЯ ЗАПИСКА №0103',
-  recipient: 'Кому: Александре',
+  recipient: `Кому: ${APP_CONFIG.heroineNameDative}`,
   sender: 'От кого: подозреваемому',
   title: 'Приглашение без протокола',
   paragraphs: [
