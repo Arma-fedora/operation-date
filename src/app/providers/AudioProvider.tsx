@@ -13,6 +13,8 @@ interface AudioContextValue {
   volume: number
   muted: boolean
   sfxEnabled: boolean
+  /** True when the current track is a file instead of the built-in synthesis. */
+  fileTrackActive: boolean
   toggle: () => void
   selectTrack: (id: string) => void
   setVolume: (volume: number) => void
@@ -33,6 +35,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const [currentTrackId, setCurrentTrackId] = useState(() => trackForScreen('boot').id)
   const lastClick = useRef(0)
   const firstScreen = useRef(true)
+  const [fileTrackActive, setFileTrackActive] = useState(false)
 
   const currentTrack = useMemo(
     () => MUSIC_TRACKS.find((track) => track.id === currentTrackId) ?? MUSIC_TRACKS[0],
@@ -66,7 +69,10 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     }
     let cancelled = false
     void engine.unlock().then(() => {
-      if (!cancelled) void engine.play(currentTrack, audio.volume, audio.muted)
+      if (cancelled) return
+      void engine.play(currentTrack, audio.volume, audio.muted).then(() => {
+        if (!cancelled) setFileTrackActive(engine.isFileTrack())
+      })
     })
     return () => {
       cancelled = true
@@ -169,6 +175,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       volume: audio.volume,
       muted: audio.muted,
       sfxEnabled: audio.sfxEnabled,
+      fileTrackActive,
       toggle,
       selectTrack,
       setVolume,
@@ -182,6 +189,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       audio.sfxEnabled,
       audio.volume,
       currentTrack,
+      fileTrackActive,
       selectTrack,
       setMuted,
       setSfxEnabled,
@@ -209,4 +217,9 @@ const NOOP_SFX = () => undefined
 export function useSfx(): (id: SfxId) => void {
   const context = useContext(AudioContext)
   return context?.sfx ?? NOOP_SFX
+}
+
+/** Same as useAudio, but returns null instead of throwing outside the provider. */
+export function useAudioOptional(): AudioContextValue | null {
+  return useContext(AudioContext)
 }

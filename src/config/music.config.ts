@@ -1,11 +1,28 @@
 import type { MusicTrack } from '../types/config'
 
+/**
+ * Screen music.
+ *
+ * `src` points to a file in `public/assets/custom/music/`. Tracks without a
+ * file fall back to the built-in Web Audio synthesis, so the app always has
+ * sound and nothing breaks while files are being added.
+ */
 export const MUSIC_TRACKS: MusicTrack[] = [
+  {
+    id: 'meme-dynasty',
+    title: 'Династия',
+    artist: 'Групповой чат',
+    src: '/assets/custom/music/meme-dynasty.mp3',
+    screens: ['boot'],
+    volume: 0.85,
+    loop: true,
+    fallback: 'generated:radio',
+    mood: 'тот самый мем из чата, включается на входе',
+  },
   {
     id: 'archive-hum',
     title: 'Архивный гул',
     artist: 'Дом культуры 01:03',
-    src: '/assets/custom/music/archive-hum.mp3',
     screens: 'global',
     volume: 0.28,
     loop: true,
@@ -16,7 +33,6 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     id: 'night-moscow',
     title: 'Ночная Москва',
     artist: 'Дом культуры 01:03',
-    src: '/assets/custom/music/night-moscow.mp3',
     screens: ['planner', 'archive'],
     volume: 0.3,
     loop: true,
@@ -27,7 +43,6 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     id: 'pigeon-chase',
     title: 'Погоня за голубем',
     artist: 'Дом культуры 01:03',
-    src: '/assets/custom/music/pigeon-chase.mp3',
     screens: ['trials', 'evidence', 'mikhaylych'],
     volume: 0.24,
     loop: true,
@@ -38,7 +53,6 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     id: 'seal-wax',
     title: 'Печать и сургуч',
     artist: 'Дом культуры 01:03',
-    src: '/assets/custom/music/seal-wax.mp3',
     screens: ['final', 'secret', 'epilogue'],
     volume: 0.3,
     loop: true,
@@ -49,8 +63,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     id: 'radio-0103',
     title: 'Радиорубка 01:03',
     artist: 'Дом культуры 01:03',
-    src: '/assets/custom/music/radio-0103.mp3',
-    screens: ['radio', 'boot', 'incident', 'interrogation'],
+    screens: ['radio', 'incident', 'interrogation'],
     volume: 0.26,
     loop: true,
     fallback: 'generated:radio',
@@ -64,5 +77,7 @@ export function trackForScreen(screen: string): MusicTrack {
   const specific = MUSIC_TRACKS.find(
     (track) => track.screens !== 'global' && track.screens.includes(screen as never),
   )
-  return specific ?? MUSIC_TRACKS[0]
+  if (specific) return specific
+  const global = MUSIC_TRACKS.find((track) => track.screens === 'global')
+  return global ?? MUSIC_TRACKS[0]
 }

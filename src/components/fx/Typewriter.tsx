@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useReducedMotion } from 'framer-motion'
 import { cn } from '../../utils'
-import { useSfx } from '../../app/providers/AudioProvider'
+import { useAudioOptional, useSfx } from '../../app/providers/AudioProvider'
 interface TypewriterProps {
   text: string
   speed?: number
@@ -24,6 +24,8 @@ export function Typewriter({
 }: TypewriterProps) {
   const reduced = useReducedMotion()
   const sfx = useSfx()
+  const audio = useAudioOptional()
+  const fileTrackActive = audio?.fileTrackActive ?? false
   const [visible, setVisible] = useState(reduced ? text.length : 0)
   const completed = useRef(false)
   const callback = useRef(onComplete)
@@ -46,7 +48,8 @@ export function Typewriter({
       interval = window.setInterval(() => {
         index += 1
         setVisible(index)
-        if (tick && index % 3 === 0) sfx('typewriter-tick')
+        // The mechanical tick would fight with a song that is already playing.
+        if (tick && !fileTrackActive && index % 3 === 0) sfx('typewriter-tick')
         if (index >= text.length) {
           window.clearInterval(interval)
           if (!completed.current) {
@@ -61,7 +64,7 @@ export function Typewriter({
       window.clearTimeout(start)
       window.clearInterval(interval)
     }
-  }, [reduced, sfx, speed, startDelay, text, tick])
+  }, [fileTrackActive, reduced, sfx, speed, startDelay, text, tick])
 
   return (
     <p className={cn('whitespace-pre-line', className)}>

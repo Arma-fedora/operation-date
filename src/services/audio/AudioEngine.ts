@@ -91,6 +91,8 @@ export class AudioEngine {
   private sfxGain: GainNode | null = null
   private current: Voice | null = null
   private currentId = ''
+  private currentIsFile = false
+  private playToken = 0
   private volume = 0.32
   private muted = false
   private sfxEnabled = true
@@ -159,6 +161,11 @@ export class AudioEngine {
     return this.currentId
   }
 
+  /** True when the playing track comes from a file rather than the synthesis. */
+  isFileTrack(): boolean {
+    return this.currentIsFile
+  }
+
   async play(track: MusicTrack, volume: number, muted: boolean): Promise<void> {
     this.setVolume(volume, muted)
     if (this.currentId === track.id && this.current) return
@@ -167,6 +174,8 @@ export class AudioEngine {
     if (ctx.state === 'suspended') await this.unlock()
     this.stopCurrent()
 
+    // Two overlapping play() calls would start the same track twice.
+    const token = ++this.playToken
     const gain = ctx.createGain()
     gain.gain.value = 0
     gain.connect(this.master)
@@ -174,15 +183,22 @@ export class AudioEngine {
     gain.gain.linearRampToValueAtTime(target, ctx.currentTime + 0.8)
 
     if (track.src) {
-      const started = await this.playFile(track, gain)
+      const started = await this.playFile(track, gain, token)
+      if (token !== this.playToken) { gain.disconnect(); return }
       if (started) {
         this.currentId = track.id
+        this.currentIsFile = true
         return
       }
     }
 
+    if (token !== this.playToken) {
+      gain.disconnect()
+      return
+    }
     this.current = this.playGenerated(track.fallback, gain)
     this.currentId = track.id
+    this.currentIsFile = false
   }
 
   /**
@@ -222,6 +238,10 @@ export class AudioEngine {
     try {
       const response = await fetch(src)
       if (!response.ok) return null
+      // A missing file on a static host can answer with the SPA fallback (HTML).
+      // Decoding that would only produce noise, so treat it as a missing file.
+      const type = response.headers.get('content-type') ?? ''
+      if (type && !type.startsWith('audio/') && !type.includes('octet-stream')) return null
       const raw = await response.arrayBuffer()
       this.rawBuffers.set(src, raw)
       return raw
@@ -257,12 +277,13 @@ export class AudioEngine {
     source.start()
   }
 
-  private async playFile(track: MusicTrack, gain: GainNode): Promise<boolean> {
+  private async playFile(track: MusicTrack, gain: GainNode, token: number): Promise<boolean> {
     if (!track.src) return false
     const ctx = this.ctx
     if (!ctx) return false
     const buffer = await this.loadBuffer(track.src)
     if (!buffer) return false
+    if (token !== this.playToken) return false
     const source = ctx.createBufferSource()
     source.buffer = buffer
     source.loop = track.loop
@@ -367,6 +388,7 @@ export class AudioEngine {
   stop(): void {
     this.stopCurrent()
     this.currentId = ''
+    this.currentIsFile = false
   }
 
   destroy(): void {

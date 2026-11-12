@@ -69,7 +69,7 @@ export function createInitialState(): GameState {
     audio: {
       muted: false,
       volume: 0.32,
-      enabled: false,
+      enabled: true,
       sfxEnabled: true,
     },
     updatedAt: now(),

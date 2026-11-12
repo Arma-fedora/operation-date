@@ -167,7 +167,7 @@ if (existsSync(resolve(root, 'dist/vendor/telegram-web-app.js'))) {
 }
 
 const expectedMedia = [
-  ['public/assets/custom/music', ['archive-hum', 'night-moscow', 'pigeon-chase', 'seal-wax', 'radio-0103']],
+  ['public/assets/custom/music', ['meme-dynasty']],
   ['public/assets/custom/sounds', [
     'ui-click',
     'ui-page',
