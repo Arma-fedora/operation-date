@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { MUSIC_TRACKS, trackForScreen } from '../../config/music.config'
 import { SFX } from '../../config/sfx.config'
 import { AudioEngine } from '../../services/audio/AudioEngine'
+import type { AudioDiagnostics } from '../../services/audio/AudioEngine'
 import { useGameStore } from '../../store/gameStore'
 import type { MusicTrack, SfxId } from '../../types/config'
 
@@ -21,6 +22,8 @@ interface AudioContextValue {
   setMuted: (muted: boolean) => void
   setSfxEnabled: (enabled: boolean) => void
   sfx: (id: SfxId) => void
+  diagnostics: AudioDiagnostics
+  testSound: () => void
 }
 
 const AudioContext = createContext<AudioContextValue | null>(null)
@@ -36,6 +39,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const lastClick = useRef(0)
   const firstScreen = useRef(true)
   const [fileTrackActive, setFileTrackActive] = useState(false)
+  const [diagnostics, setDiagnostics] = useState<AudioDiagnostics>(() => engine.getDiagnostics())
 
   const currentTrack = useMemo(
     () => MUSIC_TRACKS.find((track) => track.id === currentTrackId) ?? MUSIC_TRACKS[0],
@@ -138,6 +142,33 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     sfx('ui-page')
   }, [location.pathname, sfx])
 
+  const testSound = useCallback(() => {
+    void engine.unlock().then(async () => {
+      await engine.testTone()
+      window.setTimeout(() => setDiagnostics(engine.getDiagnostics()), 400)
+    })
+  }, [engine])
+
+  // Keep the diagnostics panel in sync with the engine state.
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setDiagnostics((previous) => {
+        const next = engine.getDiagnostics()
+        const same =
+          previous.contextState === next.contextState &&
+          previous.fileState === next.fileState &&
+          previous.fileBytes === next.fileBytes &&
+          previous.fileError === next.fileError &&
+          previous.currentTrackId === next.currentTrackId &&
+          previous.fromFile === next.fromFile &&
+          (previous.peakDb === next.peakDb ||
+            (Number.isFinite(previous.peakDb) && Number.isFinite(next.peakDb) && Math.abs(previous.peakDb - next.peakDb) < 1.5))
+        return same ? previous : next
+      })
+    }, 700)
+    return () => window.clearInterval(timer)
+  }, [engine])
+
   const toggle = useCallback(() => {
     const next = !audio.enabled
     setAudio({ enabled: next })
@@ -186,6 +217,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       muted: audio.muted,
       sfxEnabled: audio.sfxEnabled,
       fileTrackActive,
+      diagnostics,
+      testSound,
       toggle,
       selectTrack,
       setVolume,
@@ -199,12 +232,14 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       audio.sfxEnabled,
       audio.volume,
       currentTrack,
+      diagnostics,
       fileTrackActive,
       selectTrack,
       setMuted,
       setSfxEnabled,
       setVolume,
       sfx,
+      testSound,
       toggle,
     ],
   )

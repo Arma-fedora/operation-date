@@ -15,7 +15,7 @@ export const APP_CONFIG = {
   supabaseUrl: env.VITE_SUPABASE_URL ?? '',
   supabaseAnonKey: env.VITE_SUPABASE_ANON_KEY ?? '',
   /** Optional allowlist of Telegram IDs. Set in an edge function secret, not here. */
-  version: '1.0.0',
+  version: '1.1.0',
 } as const
 
 export const SCREENS: ScreenMeta[] = [

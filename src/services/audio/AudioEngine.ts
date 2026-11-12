@@ -1,5 +1,20 @@
 import type { AudioFallback, MusicTrack, SfxDefinition } from '../../types/config'
 
+export interface AudioDiagnostics {
+  /** 'none' — Web Audio недоступен, 'suspended' — ждёт жеста, 'running' — играет. */
+  contextState: 'none' | 'suspended' | 'running' | 'closed'
+  /** Что происходит с файловым треком. */
+  fileState: 'none' | 'loading' | 'loaded' | 'failed'
+  /** Последняя ошибка загрузки короткого звука. */
+  sfxError: string
+  fileBytes: number
+  fileError: string
+  /** Пик последнего измерения в дБ, -inf — сигнала нет. */
+  peakDb: number
+  currentTrackId: string
+  fromFile: boolean
+}
+
 interface Voice {
   gain: GainNode
   nodes: Array<OscillatorNode | AudioBufferSourceNode>
@@ -25,7 +40,7 @@ interface Preset {
  * The synthesized layers are ambience, not silence: without this boost they
  * land around -50 dBFS and cannot be heard at all.
  */
-const SYNTH_LEVEL = 16
+const SYNTH_LEVEL = 22
 
 const PRESETS: Record<Exclude<AudioFallback, 'silence'>, Preset> = {
   'generated:hum': {
@@ -91,10 +106,17 @@ function makeNoiseBuffer(ctx: AudioContext): AudioBuffer {
   return buffer
 }
 
+function toDb(value: number): number {
+  if (!(value > 0)) return Number.NEGATIVE_INFINITY
+  return 20 * Math.log10(value)
+}
+
 export class AudioEngine {
   private ctx: AudioContext | null = null
   private master: GainNode | null = null
   private sfxGain: GainNode | null = null
+  private analyser: AnalyserNode | null = null
+  private analyserData: Float32Array<ArrayBuffer> | null = null
   private current: Voice | null = null
   private currentId = ''
   private currentIsFile = false
@@ -107,6 +129,18 @@ export class AudioEngine {
   private rawBuffers = new Map<string, ArrayBuffer>()
   private pending = new Map<string, Promise<AudioBuffer | null>>()
   private missing = new Set<string>()
+  private peakHoldDb = Number.NEGATIVE_INFINITY
+  private peakHoldAt = 0
+  private diagnostics: AudioDiagnostics = {
+    contextState: 'none',
+    fileState: 'none',
+    sfxError: '',
+    fileBytes: 0,
+    fileError: '',
+    peakDb: Number.NEGATIVE_INFINITY,
+    currentTrackId: '',
+    fromFile: false,
+  }
 
   private ensureContext(): AudioContext | null {
     if (this.ctx) return this.ctx
@@ -118,15 +152,77 @@ export class AudioEngine {
       this.ctx = new Ctor()
       this.master = this.ctx.createGain()
       this.master.gain.value = this.muted ? 0 : this.volume
-      this.master.connect(this.ctx.destination)
+      this.analyser = this.ctx.createAnalyser()
+      this.analyser.fftSize = 2048
+      this.analyserData = new Float32Array(new ArrayBuffer(this.analyser.fftSize * 4)) as Float32Array<ArrayBuffer>
+      this.master.connect(this.analyser)
+      this.analyser.connect(this.ctx.destination)
       this.sfxGain = this.ctx.createGain()
       this.sfxGain.gain.value = this.sfxEnabled && !this.muted ? 1 : 0
-      this.sfxGain.connect(this.ctx.destination)
+      this.sfxGain.connect(this.analyser)
       this.noiseBuffer = makeNoiseBuffer(this.ctx)
+      this.syncContextState()
       return this.ctx
     } catch {
       return null
     }
+  }
+
+  private syncContextState(): void {
+    const state = this.ctx?.state
+    this.diagnostics.contextState =
+      state === 'running' ? 'running' : state === 'suspended' ? 'suspended' : state ? 'closed' : 'none'
+  }
+
+  getDiagnostics(): AudioDiagnostics {
+    this.syncContextState()
+    this.diagnostics.peakDb = this.measurePeak()
+    return { ...this.diagnostics }
+  }
+
+  /**
+   * Peak level of the master bus in dB, with a slow decay so that a short
+   * test tone stays visible in the diagnostics panel.
+   */
+  measurePeak(): number {
+    const analyser = this.analyser
+    const data = this.analyserData
+    if (!analyser || !data) return Number.NEGATIVE_INFINITY
+    analyser.getFloatTimeDomainData(data)
+    let peak = 0
+    for (const value of data) {
+      const abs = Math.abs(value)
+      if (abs > peak) peak = abs
+    }
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now()
+    const current = toDb(peak)
+    if (current > this.peakHoldDb) {
+      this.peakHoldDb = current
+      this.peakHoldAt = now
+    } else {
+      const seconds = (now - this.peakHoldAt) / 1000
+      this.peakHoldDb = Math.max(current, this.peakHoldDb - 8 * seconds)
+    }
+    return this.peakHoldDb
+  }
+
+  /** Plays a short test tone so the user can confirm the audio path works. */
+  async testTone(): Promise<void> {
+    const ctx = this.ensureContext()
+    if (!ctx) return
+    if (ctx.state === 'suspended') await this.unlock()
+    const osc = ctx.createOscillator()
+    osc.type = 'sine'
+    osc.frequency.value = 880
+    const gain = ctx.createGain()
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.4, ctx.currentTime + 0.03)
+    gain.gain.setValueAtTime(0.4, ctx.currentTime + 0.35)
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.45)
+    osc.connect(gain)
+    gain.connect(this.master ?? ctx.destination)
+    osc.start()
+    osc.stop(ctx.currentTime + 0.5)
   }
 
   async unlock(): Promise<void> {
@@ -139,6 +235,7 @@ export class AudioEngine {
         // Autoplay policy can still block; the next gesture retries.
       }
     }
+    this.syncContextState()
   }
 
   setVolume(volume: number, muted: boolean): void {
@@ -174,6 +271,7 @@ export class AudioEngine {
 
   async play(track: MusicTrack, volume: number, muted: boolean): Promise<void> {
     this.setVolume(volume, muted)
+    this.diagnostics.currentTrackId = track.id
     if (this.currentId === track.id && this.current) return
     const ctx = this.ensureContext()
     if (!ctx || !this.master) return
@@ -190,10 +288,15 @@ export class AudioEngine {
 
     if (track.src) {
       const started = await this.playFile(track, gain, token)
-      if (token !== this.playToken) { gain.disconnect(); return }
+      if (token !== this.playToken) {
+        gain.disconnect()
+        return
+      }
       if (started) {
         this.currentId = track.id
         this.currentIsFile = true
+        this.diagnostics.fromFile = true
+        this.diagnostics.fileState = 'loaded'
         return
       }
     }
@@ -205,13 +308,15 @@ export class AudioEngine {
     this.current = this.playGenerated(track.fallback, gain)
     this.currentId = track.id
     this.currentIsFile = false
+    this.diagnostics.fromFile = false
+    if (track.src) this.diagnostics.fileState = 'failed'
   }
 
   /**
    * Fetches and decodes an audio file once, then keeps it in memory.
    * Returns null when the file is missing or unreadable.
    */
-  private async loadBuffer(src: string): Promise<AudioBuffer | null> {
+  private async loadBuffer(src: string, kind: 'music' | 'sfx' = 'music'): Promise<AudioBuffer | null> {
     const cached = this.buffers.get(src)
     if (cached) return cached
     if (this.missing.has(src)) return null
@@ -219,18 +324,32 @@ export class AudioEngine {
     if (pending) return pending
     const ctx = this.ctx
     if (!ctx) return null
+    if (kind === 'music') this.diagnostics.fileState = 'loading'
     const request = (async () => {
       try {
         const raw = this.rawBuffers.get(src) ?? (await this.fetchRaw(src))
         if (!raw) {
           this.missing.add(src)
+          if (kind === 'music') {
+            this.diagnostics.fileError = 'файл не найден или недоступен'
+            this.diagnostics.fileState = 'failed'
+          } else {
+            this.diagnostics.sfxError = 'файл не найден или недоступен'
+          }
           return null
         }
+        if (kind === 'music') this.diagnostics.fileBytes = raw.byteLength
         const buffer = await ctx.decodeAudioData(raw.slice(0))
         this.buffers.set(src, buffer)
         return buffer
-      } catch {
+      } catch (error) {
         this.missing.add(src)
+        if (kind === 'music') {
+          this.diagnostics.fileError = error instanceof Error ? error.message : String(error)
+          this.diagnostics.fileState = 'failed'
+        } else {
+          this.diagnostics.sfxError = error instanceof Error ? error.message : String(error)
+        }
         return null
       } finally {
         this.pending.delete(src)
@@ -243,15 +362,22 @@ export class AudioEngine {
   private async fetchRaw(src: string): Promise<ArrayBuffer | null> {
     try {
       const response = await fetch(src)
-      if (!response.ok) return null
+      if (!response.ok) {
+        this.diagnostics.fileError = `HTTP ${response.status}`
+        return null
+      }
       // A missing file on a static host can answer with the SPA fallback (HTML).
       // Decoding that would only produce noise, so treat it as a missing file.
       const type = response.headers.get('content-type') ?? ''
-      if (type && !type.startsWith('audio/') && !type.includes('octet-stream')) return null
+      if (type && !type.startsWith('audio/') && !type.includes('octet-stream')) {
+        this.diagnostics.fileError = `не тот формат (${type})`
+        return null
+      }
       const raw = await response.arrayBuffer()
       this.rawBuffers.set(src, raw)
       return raw
-    } catch {
+    } catch (error) {
+      this.diagnostics.fileError = error instanceof Error ? error.message : String(error)
       return null
     }
   }
@@ -272,7 +398,7 @@ export class AudioEngine {
     const ctx = this.ensureContext()
     if (!ctx || !this.sfxGain) return
     if (ctx.state === 'suspended') await this.unlock()
-    const buffer = await this.loadBuffer(definition.src)
+    const buffer = await this.loadBuffer(definition.src, 'sfx')
     if (!buffer) return
     const source = ctx.createBufferSource()
     source.buffer = buffer
@@ -413,6 +539,8 @@ export class AudioEngine {
       this.ctx = null
       this.master = null
       this.sfxGain = null
+      this.analyser = null
+      this.analyserData = null
     }
   }
 }

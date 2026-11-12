@@ -41,6 +41,18 @@ export function TopBar({ onMenu }: { onMenu: () => void }) {
               демо
             </span>
           ) : null}
+          <span
+            className="hidden font-mono text-[8px] uppercase tracking-[0.14em] text-[var(--fg-muted)]/70 sm:inline-block"
+            title="Состояние звука"
+          >
+            {audio.diagnostics.contextState === 'running'
+              ? Number.isFinite(audio.diagnostics.peakDb)
+                ? `${audio.diagnostics.peakDb.toFixed(0)} дБ`
+                : 'звук'
+              : audio.diagnostics.contextState === 'suspended'
+                ? 'ждём касания'
+                : 'нет звука'}
+          </span>
           <IconButton label={audio.enabled ? 'Выключить звук' : 'Включить звук'} size="sm" onClick={audio.toggle}>
             {audio.enabled && !audio.muted ? <Volume2 className="size-3.5" /> : <VolumeX className="size-3.5" />}
           </IconButton>
