@@ -45,6 +45,27 @@ export interface MusicTrack {
   mood: string
 }
 
+export type SfxId =
+  | 'ui-click'
+  | 'ui-page'
+  | 'puzzle-correct'
+  | 'puzzle-wrong'
+  | 'evidence-found'
+  | 'secret-unlock'
+  | 'envelope-open'
+  | 'stamp-press'
+  | 'pigeon-coo'
+  | 'radio-click'
+  | 'typewriter-tick'
+  | 'answer-sent'
+
+export interface SfxDefinition {
+  id: SfxId
+  /** Path to the file in public/. Missing files stay silent instead of breaking. */
+  src?: string
+  volume: number
+}
+
 export interface PuzzleDefinition {
   id: PuzzleId
   title: string

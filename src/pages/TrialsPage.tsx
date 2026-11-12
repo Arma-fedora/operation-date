@@ -5,6 +5,7 @@ import { QUIZ_RESULTS } from '../config/characters.config'
 import { TRIAL_CARDS, WHEEL_OPTIONS } from '../config/trials.config'
 import { useGameStore } from '../store/gameStore'
 import { haptic } from '../services/telegram/telegram'
+import { useSfx } from '../app/providers/AudioProvider'
 import { PageHeader } from '../components/ui/PageHeader'
 import { Panel } from '../components/ui/Panel'
 import { Button } from '../components/ui/Button'
@@ -30,6 +31,7 @@ export function TrialsPage() {
   const state = useGameStore()
   const completeScreen = useGameStore((store) => store.completeScreen)
   const [active, setActive] = useState<TrialId | null>(null)
+  const sfx = useSfx()
 
   const done = {
     reaction: state.trials.reactionDone,
@@ -110,6 +112,7 @@ export function TrialsPage() {
                       className="mt-3"
                       onClick={() => {
                         haptic('selection')
+                        if (trial.id === 'reaction') sfx('pigeon-coo')
                         setActive(trial.id)
                       }}
                       icon={isDone ? <Sparkles className="size-3.5" /> : <ArrowRight className="size-3.5" />}

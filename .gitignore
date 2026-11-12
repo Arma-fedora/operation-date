@@ -49,3 +49,13 @@ supabase/.env.functions
 .supabase/
 supabase/.temp/
 dist.zip
+
+# Personal media stays out of the public repository but still ships with the build.
+public/assets/custom/music/*
+public/assets/custom/sounds/*
+public/assets/custom/photos/*
+public/assets/custom/memes/*
+public/assets/custom/backgrounds/*
+public/assets/custom/characters/*
+!public/assets/custom/**/.gitkeep
+!public/assets/custom/README.md

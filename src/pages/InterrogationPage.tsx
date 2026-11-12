@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowRight, MessageSquareQuote, SkipForward } from 'lucide-react'
 import { INTERROGATION } from '../config/characters.config'
 import { useToast } from '../app/providers/ToastProvider'
+import { useSfx } from '../app/providers/AudioProvider'
 import { useGameStore } from '../store/gameStore'
 import { haptic } from '../services/telegram/telegram'
 import { PageHeader } from '../components/ui/PageHeader'
@@ -31,6 +32,7 @@ export function InterrogationPage() {
   const setFlag = useGameStore((store) => store.setFlag)
   const discoverSecret = useGameStore((store) => store.discoverSecret)
   const { showToast } = useToast()
+  const sfx = useSfx()
 
   const [active, setActive] = useState(!state.completed.includes('interrogation'))
   const [nodeId, setNodeId] = useState(INTERROGATION.start)
@@ -57,6 +59,7 @@ export function InterrogationPage() {
     }
     if (choice.secret) {
       discoverSecret(choice.secret)
+      sfx('secret-unlock')
       showToast('Скрытая реплика: инспектор только что признался в чём-то лишнем.', 'secret')
     }
     setHistory((current) => [

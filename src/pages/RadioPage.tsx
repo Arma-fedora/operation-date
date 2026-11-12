@@ -10,6 +10,7 @@ import { haptic } from '../services/telegram/telegram'
 import { PageHeader } from '../components/ui/PageHeader'
 import { Panel } from '../components/ui/Panel'
 import { Button } from '../components/ui/Button'
+import { Toggle } from '../components/ui/Toggle'
 import { Tag } from '../components/ui/Tag'
 import { Reveal } from '../components/fx/Reveal'
 import { cn } from '../utils'
@@ -28,17 +29,20 @@ export function RadioPage() {
   const nextTrack = () => {
     const next = MUSIC_TRACKS[(activeIndex + 1) % MUSIC_TRACKS.length]
     haptic('selection')
+    audio.sfx('radio-click')
     audio.selectTrack(next.id)
   }
 
   const prevTrack = () => {
     const prev = MUSIC_TRACKS[(activeIndex - 1 + MUSIC_TRACKS.length) % MUSIC_TRACKS.length]
     haptic('selection')
+    audio.sfx('radio-click')
     audio.selectTrack(prev.id)
   }
 
   const play = (id: string) => {
     haptic('selection')
+    audio.sfx('radio-click')
     audio.selectTrack(id)
     if (!complete) completeScreen('radio')
   }
@@ -166,10 +170,19 @@ export function RadioPage() {
                   {Math.round(audio.volume * 100)}
                 </span>
               </div>
+
+              <div className="mt-1 border-t border-[var(--line)] pt-1">
+                <Toggle
+                  checked={audio.sfxEnabled}
+                  onChange={audio.setSfxEnabled}
+                  label="эффекты"
+                  hint="клики, улики, секреты, вскрытие конверта"
+                />
+              </div>
             </div>
             <div className="border-t border-[var(--line)] px-4 py-2.5 font-mono text-[8px] uppercase leading-relaxed tracking-[0.12em] text-[var(--fg-muted)]/60">
               {activeTrack.src
-                ? 'трек из настроенного файла'
+                ? `файл: ${activeTrack.src.split('/').pop()} · если файла нет — синтезированный трек`
                 : 'демо-трек синтезирован в браузере · свой файл добавляется в src/config/music.config.ts'}
             </div>
           </Panel>

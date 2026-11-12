@@ -166,6 +166,35 @@ if (existsSync(resolve(root, 'dist/vendor/telegram-web-app.js'))) {
   fail('нет dist/vendor/telegram-web-app.js — пересоберите проект')
 }
 
+const expectedMedia = [
+  ['public/assets/custom/music', ['archive-hum', 'night-moscow', 'pigeon-chase', 'seal-wax', 'radio-0103']],
+  ['public/assets/custom/sounds', [
+    'ui-click',
+    'ui-page',
+    'puzzle-correct',
+    'puzzle-wrong',
+    'evidence-found',
+    'secret-unlock',
+    'envelope-open',
+    'stamp-press',
+    'pigeon-coo',
+    'radio-click',
+    'typewriter-tick',
+    'answer-sent',
+  ]],
+  ['public/assets/custom/photos', ['case-photo', 'final-envelope', 'cipher-doc']],
+  ['public/assets/custom/memes', ['meme-0103', 'pigeon']],
+  ['public/assets/custom/characters/mikhaylych', ['portrait']],
+]
+
+for (const [dir, names] of expectedMedia) {
+  const missing = names.filter(
+    (name) => !existsSync(resolve(root, dir, `${name}.webp`)) && !existsSync(resolve(root, dir, `${name}.mp3`)),
+  )
+  if (missing.length === 0) ok(`${dir}: все файлы на месте`)
+  else warn(`${dir}: не хватает ${missing.length} — ${missing.join(', ')}`)
+}
+
 for (const file of envFiles) {
   if (!existsSync(resolve(root, file))) warn(`${file} отсутствует (нужен только для реального деплоя)`)
 }

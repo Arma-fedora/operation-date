@@ -94,7 +94,13 @@ export function BootPage() {
             <GlitchText>Сигнал перехвачен</GlitchText>
           </h1>
           <div className="mt-4 space-y-1.5 font-mono text-[10px] uppercase leading-relaxed tracking-[0.12em] text-[var(--fg-muted)]">
-            <Typewriter text={`> объект: ${APP_CONFIG.heroineName.toUpperCase()}`} speed={26} startDelay={450} cursor={false} />
+            <Typewriter
+              text={`> объект: ${APP_CONFIG.heroineName.toUpperCase()}`}
+              speed={26}
+              startDelay={450}
+              cursor={false}
+              tick
+            />
             <Typewriter text="> статус: не в курсе" speed={24} startDelay={1100} cursor={false} />
             <Typewriter text="> рекомендация: открыть дело №0103" speed={18} startDelay={1750} cursor={false} />
           </div>

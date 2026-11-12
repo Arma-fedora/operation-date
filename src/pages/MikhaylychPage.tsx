@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowRight, Check, LockKeyhole, MessageSquare, Radio, RefreshCw, Sparkles } from 'lucide-react'
 import { MIKHAYLYCH_SECRET, MIKHAYLYCH_TIPS } from '../config/characters.config'
 import { useToast } from '../app/providers/ToastProvider'
+import { useSfx } from '../app/providers/AudioProvider'
 import { useGameStore } from '../store/gameStore'
 import { haptic } from '../services/telegram/telegram'
 import { PageHeader } from '../components/ui/PageHeader'
@@ -21,6 +22,7 @@ export function MikhaylychPage() {
   const completeScreen = useGameStore((store) => store.completeScreen)
   const discoverSecret = useGameStore((store) => store.discoverSecret)
   const { showToast } = useToast()
+  const sfx = useSfx()
   const [replay, setReplay] = useState(false)
 
   const completed = state.completed.includes('mikhaylych')
@@ -42,6 +44,7 @@ export function MikhaylychPage() {
     if (!secretFound) {
       discoverSecret('mikhaylych-secret')
       haptic('success')
+      sfx('secret-unlock')
       showToast('P.S. открыт: все улики ведут в комнату 01:03. Пломбиру не говорите.', 'secret')
     }
   }

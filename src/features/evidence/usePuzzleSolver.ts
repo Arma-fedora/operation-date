@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { useGameStore } from '../../store/gameStore'
 import { haptic } from '../../services/telegram/telegram'
+import { useSfx } from '../../app/providers/AudioProvider'
 import type { PuzzleDefinition } from '../../types/config'
 
 export function usePuzzleSolver(definition: PuzzleDefinition, onSolved?: () => void) {
   const progress = useGameStore((state) => state.puzzles[definition.id])
   const recordPuzzle = useGameStore((state) => state.recordPuzzle)
   const addEvidence = useGameStore((state) => state.addEvidence)
+  const sfx = useSfx()
   const [wrongMessage, setWrongMessage] = useState('')
   const [shake, setShake] = useState(0)
 
@@ -19,6 +21,7 @@ export function usePuzzleSolver(definition: PuzzleDefinition, onSolved?: () => v
     })
     addEvidence(definition.evidenceId)
     haptic('success')
+    sfx('puzzle-correct')
     onSolved?.()
   }
 
@@ -33,6 +36,7 @@ export function usePuzzleSolver(definition: PuzzleDefinition, onSolved?: () => v
     setWrongMessage(definition.wrongTexts[progress.attempts % definition.wrongTexts.length])
     setShake((value) => value + 1)
     haptic('error')
+    sfx('puzzle-wrong')
     return false
   }
 

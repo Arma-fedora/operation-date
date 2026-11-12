@@ -20,6 +20,7 @@ import { APP_CONFIG } from '../config/app.config'
 import { DATE_CONFIG } from '../config/date.config'
 import { FINAL_CONFIG } from '../config/final.config'
 import { useToast } from '../app/providers/ToastProvider'
+import { useSfx } from '../app/providers/AudioProvider'
 import { useGameStore } from '../store/gameStore'
 import { submitFinalResponse } from '../services/api/gameApi'
 import { haptic } from '../services/telegram/telegram'
@@ -45,6 +46,7 @@ export function FinalPage() {
   const state = useGameStore()
   const setFinalResponse = useGameStore((store) => store.setFinalResponse)
   const { showToast } = useToast()
+  const sfx = useSfx()
   const existing = state.finalResponse
   const [opened, setOpened] = useState(Boolean(existing))
   const [editing, setEditing] = useState(!existing)
@@ -71,6 +73,8 @@ export function FinalPage() {
 
   const openEnvelope = () => {
     haptic('success')
+    sfx('envelope-open')
+    sfx('stamp-press')
     setOpened(true)
   }
 
@@ -106,6 +110,7 @@ export function FinalPage() {
       })
       setEditing(false)
       haptic('success')
+      sfx('answer-sent')
       showToast(
         result.delivery === 'telegram'
           ? 'Ответ доставлен. Архив закрывает дело.'

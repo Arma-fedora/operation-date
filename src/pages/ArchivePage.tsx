@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowRight, Check, FileText, FolderLock, Image as ImageIcon, Lock, Sparkles, Sticker } from 'lucide-react'
 import { GALLERY_ITEMS } from '../config/gallery.config'
 import { useToast } from '../app/providers/ToastProvider'
+import { useSfx } from '../app/providers/AudioProvider'
 import { useGameStore } from '../store/gameStore'
 import { haptic } from '../services/telegram/telegram'
 import { isUnlockMet, unlockLabel } from '../utils/conditionsGallery'
@@ -50,6 +51,7 @@ export function ArchivePage() {
   const discoverSecret = useGameStore((store) => store.discoverSecret)
   const completeScreen = useGameStore((store) => store.completeScreen)
   const { showToast } = useToast()
+  const sfx = useSfx()
   const [filter, setFilter] = useState<Filter>('all')
   const [activeId, setActiveId] = useState<string | null>(null)
   const [redOpen, setRedOpen] = useState(false)
@@ -77,6 +79,7 @@ export function ArchivePage() {
     if (!redUnlocked) {
       discoverSecret('red-folder')
       haptic('success')
+      sfx('secret-unlock')
       showToast('Секрет: красная папка открыта. Внутри записка «Спасибо, что открыли».', 'secret')
       completeScreen('archive')
     }

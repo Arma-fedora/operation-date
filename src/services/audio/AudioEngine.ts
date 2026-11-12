@@ -1,9 +1,8 @@
-import type { AudioFallback, MusicTrack } from '../../types/config'
+import type { AudioFallback, MusicTrack, SfxDefinition } from '../../types/config'
 
 interface Voice {
   gain: GainNode
   nodes: Array<OscillatorNode | AudioBufferSourceNode>
-  extra?: HTMLAudioElement
   cleanup: () => void
 }
 
@@ -89,11 +88,17 @@ function makeNoiseBuffer(ctx: AudioContext): AudioBuffer {
 export class AudioEngine {
   private ctx: AudioContext | null = null
   private master: GainNode | null = null
+  private sfxGain: GainNode | null = null
   private current: Voice | null = null
   private currentId = ''
   private volume = 0.32
   private muted = false
+  private sfxEnabled = true
   private noiseBuffer: AudioBuffer | null = null
+  private buffers = new Map<string, AudioBuffer>()
+  private rawBuffers = new Map<string, ArrayBuffer>()
+  private pending = new Map<string, Promise<AudioBuffer | null>>()
+  private missing = new Set<string>()
 
   private ensureContext(): AudioContext | null {
     if (this.ctx) return this.ctx
@@ -106,6 +111,9 @@ export class AudioEngine {
       this.master = this.ctx.createGain()
       this.master.gain.value = this.muted ? 0 : this.volume
       this.master.connect(this.ctx.destination)
+      this.sfxGain = this.ctx.createGain()
+      this.sfxGain.gain.value = this.sfxEnabled && !this.muted ? 1 : 0
+      this.sfxGain.connect(this.ctx.destination)
       this.noiseBuffer = makeNoiseBuffer(this.ctx)
       return this.ctx
     } catch {
@@ -132,6 +140,19 @@ export class AudioEngine {
     const target = muted ? 0 : this.volume
     this.master.gain.cancelScheduledValues(this.ctx.currentTime)
     this.master.gain.linearRampToValueAtTime(target, this.ctx.currentTime + 0.25)
+    this.applySfxGain()
+  }
+
+  setSfxEnabled(enabled: boolean): void {
+    this.sfxEnabled = enabled
+    this.applySfxGain()
+  }
+
+  private applySfxGain(): void {
+    if (!this.sfxGain || !this.ctx) return
+    const target = this.sfxEnabled && !this.muted ? 1 : 0
+    this.sfxGain.gain.cancelScheduledValues(this.ctx.currentTime)
+    this.sfxGain.gain.linearRampToValueAtTime(target, this.ctx.currentTime + 0.15)
   }
 
   getCurrentId(): string {
@@ -164,50 +185,103 @@ export class AudioEngine {
     this.currentId = track.id
   }
 
+  /**
+   * Fetches and decodes an audio file once, then keeps it in memory.
+   * Returns null when the file is missing or unreadable.
+   */
+  private async loadBuffer(src: string): Promise<AudioBuffer | null> {
+    const cached = this.buffers.get(src)
+    if (cached) return cached
+    if (this.missing.has(src)) return null
+    const pending = this.pending.get(src)
+    if (pending) return pending
+    const ctx = this.ctx
+    if (!ctx) return null
+    const request = (async () => {
+      try {
+        const raw = this.rawBuffers.get(src) ?? (await this.fetchRaw(src))
+        if (!raw) {
+          this.missing.add(src)
+          return null
+        }
+        const buffer = await ctx.decodeAudioData(raw.slice(0))
+        this.buffers.set(src, buffer)
+        return buffer
+      } catch {
+        this.missing.add(src)
+        return null
+      } finally {
+        this.pending.delete(src)
+      }
+    })()
+    this.pending.set(src, request)
+    return request
+  }
+
+  private async fetchRaw(src: string): Promise<ArrayBuffer | null> {
+    try {
+      const response = await fetch(src)
+      if (!response.ok) return null
+      const raw = await response.arrayBuffer()
+      this.rawBuffers.set(src, raw)
+      return raw
+    } catch {
+      return null
+    }
+  }
+
+  /**
+   * Warms the cache so the first playback starts without waiting for the network.
+   * Uses fetch only, so no AudioContext is created before the first gesture.
+   */
+  preload(track: MusicTrack): void {
+    if (!track.src) return
+    if (this.buffers.has(track.src) || this.rawBuffers.has(track.src)) return
+    if (this.missing.has(track.src)) return
+    void this.fetchRaw(track.src)
+  }
+
+  async playSfx(definition: SfxDefinition): Promise<void> {
+    if (!definition.src || !this.sfxEnabled || this.muted) return
+    const ctx = this.ensureContext()
+    if (!ctx || !this.sfxGain) return
+    if (ctx.state === 'suspended') await this.unlock()
+    const buffer = await this.loadBuffer(definition.src)
+    if (!buffer) return
+    const source = ctx.createBufferSource()
+    source.buffer = buffer
+    const gain = ctx.createGain()
+    gain.gain.value = definition.volume
+    source.connect(gain)
+    gain.connect(this.sfxGain)
+    source.start()
+  }
+
   private async playFile(track: MusicTrack, gain: GainNode): Promise<boolean> {
     if (!track.src) return false
-    const audio = new Audio(track.src)
-    audio.loop = track.loop
-    audio.preload = 'auto'
-    audio.volume = 1
-    try {
-      await audio.play()
-    } catch {
-      audio.pause()
-      return false
-    }
     const ctx = this.ctx
     if (!ctx) return false
-    try {
-      const source = ctx.createMediaElementSource(audio)
-      source.connect(gain)
-      this.current = {
-        gain,
-        nodes: [source as unknown as AudioBufferSourceNode],
-        extra: audio,
-        cleanup: () => {
-          audio.pause()
-          audio.src = ''
-          source.disconnect()
-          gain.disconnect()
-        },
-      }
-      return true
-    } catch {
-      // If MediaElementSource is unavailable, play the element directly at a low volume.
-      audio.volume = this.muted ? 0 : this.volume * track.volume
-      this.current = {
-        gain,
-        nodes: [],
-        extra: audio,
-        cleanup: () => {
-          audio.pause()
-          audio.src = ''
-          gain.disconnect()
-        },
-      }
-      return true
+    const buffer = await this.loadBuffer(track.src)
+    if (!buffer) return false
+    const source = ctx.createBufferSource()
+    source.buffer = buffer
+    source.loop = track.loop
+    source.connect(gain)
+    source.start()
+    this.current = {
+      gain,
+      nodes: [source],
+      cleanup: () => {
+        try {
+          source.stop()
+        } catch {
+          // Already stopped.
+        }
+        source.disconnect()
+        gain.disconnect()
+      },
     }
+    return true
   }
 
   private playGenerated(fallback: AudioFallback, gain: GainNode): Voice {
@@ -297,10 +371,15 @@ export class AudioEngine {
 
   destroy(): void {
     this.stop()
+    this.buffers.clear()
+    this.rawBuffers.clear()
+    this.pending.clear()
+    this.missing.clear()
     if (this.ctx) {
       this.ctx.close().catch(() => undefined)
       this.ctx = null
       this.master = null
+      this.sfxGain = null
     }
   }
 }

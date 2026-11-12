@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowRight, Check, Eye, FileText, Fingerprint, Paperclip, Search } from 'lucide-react'
 import { PUZZLE_ORDER, PUZZLES } from '../config/puzzles.config'
 import { useToast } from '../app/providers/ToastProvider'
+import { useSfx } from '../app/providers/AudioProvider'
 import { useGameStore } from '../store/gameStore'
 import { haptic } from '../services/telegram/telegram'
 import { PageHeader } from '../components/ui/PageHeader'
@@ -40,6 +41,7 @@ export function EvidencePage() {
   const completeScreen = useGameStore((store) => store.completeScreen)
   const discoverSecret = useGameStore((store) => store.discoverSecret)
   const { showToast } = useToast()
+  const sfx = useSfx()
   const [active, setActive] = useState<PuzzleId | null>(null)
   const [justSolved, setJustSolved] = useState<string | null>(null)
 
@@ -61,12 +63,14 @@ export function EvidencePage() {
     }
     discoverSecret('hidden-stamp')
     haptic('success')
+    sfx('secret-unlock')
     showToast('Секрет: служебная печать 01:03 найдена. Она понадобится в комнате 01:03.', 'secret')
   }
 
   const onSolved = (definitionTitle: string) => {
     setJustSolved(definitionTitle)
     haptic('success')
+    sfx('evidence-found')
     showToast(`Улика приобщена: ${definitionTitle}.`, 'success')
     window.setTimeout(() => setJustSolved(null), 2400)
   }

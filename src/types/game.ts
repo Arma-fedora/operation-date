@@ -67,6 +67,7 @@ export interface GameState {
     muted: boolean
     volume: number
     enabled: boolean
+    sfxEnabled: boolean
   }
   updatedAt: string
 }

@@ -4,7 +4,8 @@ export const GALLERY_ITEMS: GalleryItem[] = [
   {
     id: 'case-photo',
     title: 'Фото с места происшествия',
-    alt: 'Стилизованный стол с лампой и бумагами',
+    src: '/assets/custom/photos/case-photo.webp',
+    alt: 'Стол с лампой и бумагами в архиве после 01:03',
     caption:
       'Стол, лампа, бумаги. Ничего необычного, если не считать того, что всё это появилось в 01:03.',
     kind: 'photo',
@@ -16,7 +17,8 @@ export const GALLERY_ITEMS: GalleryItem[] = [
   {
     id: 'meme-0103',
     title: 'Мем №0103',
-    alt: 'Абстрактная карточка с надписью 01:03',
+    src: '/assets/custom/memes/meme-0103.webp',
+    alt: 'Карточка с надписью 01:03',
     caption:
       'Разрешён к распространению только среди участников операции. Все остальные увидят просто часы.',
     kind: 'meme',
@@ -28,6 +30,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
   {
     id: 'cipher-doc',
     title: 'Фрагмент шифра',
+    src: '/assets/custom/photos/cipher-doc.webp',
     alt: 'Документ с рядами чисел',
     caption: '12 · 1 · 15 · 1 · 13. Кто-то очень старался выглядеть загадочно. Получилось.',
     kind: 'document',
@@ -39,6 +42,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
   {
     id: 'pigeon',
     title: 'Голубь Палыч',
+    src: '/assets/custom/memes/pigeon.webp',
     alt: 'Портрет голубя в шляпе',
     caption:
       'Ценный свидетель. Отказался от показаний, но согласился на фотосессию. Гонорар — крошки.',
@@ -87,6 +91,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
   {
     id: 'final-envelope',
     title: 'Конверт до вскрытия',
+    src: '/assets/custom/photos/final-envelope.webp',
     alt: 'Конверт с сургучной печатью',
     caption:
       'Фотография сделана за минуту до главного. На обороте подписано: «Если ты это читаешь, значит, всё получилось».',

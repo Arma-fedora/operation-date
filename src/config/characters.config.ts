@@ -317,7 +317,7 @@ export const QUIZ_RESULTS: QuizResult[] = [
  */
 export const CHARACTER_ASSETS = {
   mikhaylychPortrait: {
-    src: '',
+    src: '/assets/custom/characters/mikhaylych/portrait.webp',
     alt: 'Михалыч на закрытом канале',
   },
 } as const
