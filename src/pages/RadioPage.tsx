@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
-import { Activity, ArrowLeft, ArrowRight, Disc3, Pause, Play, Radio, Volume1, Volume2, VolumeX } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Disc3, Pause, Play, Radio, Volume1, Volume2, VolumeX } from 'lucide-react'
 import { MUSIC_TRACKS } from '../config/music.config'
 import { SCREEN_BY_ID } from '../config/app.config'
 import { useAudio } from '../app/providers/AudioProvider'
@@ -11,6 +11,7 @@ import { PageHeader } from '../components/ui/PageHeader'
 import { Panel } from '../components/ui/Panel'
 import { Button } from '../components/ui/Button'
 import { Toggle } from '../components/ui/Toggle'
+import { SoundCheck } from '../components/audio/SoundCheck'
 import { Tag } from '../components/ui/Tag'
 import { Reveal } from '../components/fx/Reveal'
 import { cn } from '../utils'
@@ -21,7 +22,6 @@ export function RadioPage() {
   const navigate = useNavigate()
   const reduced = useReducedMotion()
   const audio = useAudio()
-  const { diagnostics } = audio
   const completeScreen = useGameStore((store) => store.completeScreen)
   const complete = useGameStore((store) => store.completed.includes('radio'))
   const activeIndex = MUSIC_TRACKS.findIndex((track) => track.id === audio.currentTrack.id)
@@ -182,44 +182,7 @@ export function RadioPage() {
               </div>
 
               <div className="mt-2 border-t border-[var(--line)] pt-2">
-                <p className="font-mono text-[8px] uppercase tracking-[0.16em] text-[var(--fg-muted)]/70">
-                  диагностика звука
-                </p>
-                <dl className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-1 font-mono text-[9px] text-[var(--fg-muted)]">
-                  <dt>контекст</dt>
-                  <dd className="text-right text-[var(--fg)]">{diagnostics.contextState}</dd>
-                  <dt>трек</dt>
-                  <dd className="text-right text-[var(--fg)]">
-                    {diagnostics.currentTrackId || '—'}
-                    {diagnostics.fromFile ? ' (файл)' : ' (синтез)'}
-                  </dd>
-                  <dt>файл</dt>
-                  <dd className="text-right text-[var(--fg)]">{diagnostics.fileState}</dd>
-                  <dt>байт</dt>
-                  <dd className="text-right text-[var(--fg)]">
-                    {diagnostics.fileBytes ? diagnostics.fileBytes.toLocaleString('ru') : '—'}
-                  </dd>
-                  <dt>уровень</dt>
-                  <dd className="text-right text-[var(--fg)]">
-                    {Number.isFinite(diagnostics.peakDb)
-                      ? `${diagnostics.peakDb.toFixed(1)} дБ`
-                      : 'тишина'}
-                  </dd>
-                </dl>
-                {diagnostics.fileError ? (
-                  <p className="mt-1 font-mono text-[8px] leading-relaxed text-[var(--stamp)]">
-                    ошибка загрузки: {diagnostics.fileError}
-                  </p>
-                ) : null}
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="mt-2"
-                  onClick={audio.testSound}
-                  icon={<Activity className="size-3.5" />}
-                >
-                  проверить звук
-                </Button>
+                <SoundCheck compact />
               </div>
             </div>
             <div className="border-t border-[var(--line)] px-4 py-2.5 font-mono text-[8px] uppercase leading-relaxed tracking-[0.12em] text-[var(--fg-muted)]/60">

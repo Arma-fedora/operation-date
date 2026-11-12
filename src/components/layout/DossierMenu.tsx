@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { APP_CONFIG, CORE_SCREENS, SCREENS } from '../../config/app.config'
+import { SoundCheck } from '../audio/SoundCheck'
 import { useAudio } from '../../app/providers/AudioProvider'
 import { useRegisterBackHandler } from '../../app/providers/BackButtonProvider'
 import { useToast } from '../../app/providers/ToastProvider'
@@ -174,6 +175,9 @@ export function DossierMenu({ open, onClose }: { open: boolean; onClose: () => v
                     >
                       {audio.enabled && !audio.muted ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />}
                     </button>
+                  </div>
+                  <div className="mt-3">
+                    <SoundCheck compact />
                   </div>
                   <div className="mt-3 flex items-center gap-2">
                     <input

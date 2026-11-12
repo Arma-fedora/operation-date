@@ -8,6 +8,7 @@ import { useGameStore } from '../store/gameStore'
 import { latestAvailableScreen } from '../utils/conditions'
 import { haptic, requestFullscreen } from '../services/telegram/telegram'
 import { Button } from '../components/ui/Button'
+import { SoundCheck } from '../components/audio/SoundCheck'
 import { Stamp } from '../components/ui/Stamp'
 import { Typewriter } from '../components/fx/Typewriter'
 import { GlitchText } from '../components/fx/Reveal'
@@ -141,6 +142,7 @@ export function BootPage() {
             тобой. Только сюжет, музыка и один конверт.
           </p>
         </div>
+        <SoundCheck compact />
         <p className="text-center font-mono text-[8px] uppercase tracking-[0.18em] text-[var(--fg-muted)]/50">
           {APP_CONFIG.title} · версия {APP_CONFIG.version}
         </p>

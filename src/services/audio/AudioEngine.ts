@@ -327,7 +327,7 @@ export class AudioEngine {
     if (kind === 'music') this.diagnostics.fileState = 'loading'
     const request = (async () => {
       try {
-        const raw = this.rawBuffers.get(src) ?? (await this.fetchRaw(src))
+        const raw = this.rawBuffers.get(src) ?? (await this.fetchRaw(src, kind))
         if (!raw) {
           this.missing.add(src)
           if (kind === 'music') {
@@ -359,25 +359,28 @@ export class AudioEngine {
     return request
   }
 
-  private async fetchRaw(src: string): Promise<ArrayBuffer | null> {
+  private async fetchRaw(src: string, kind: 'music' | 'sfx' = 'music'): Promise<ArrayBuffer | null> {
     try {
       const response = await fetch(src)
       if (!response.ok) {
-        this.diagnostics.fileError = `HTTP ${response.status}`
+        if (kind === 'music') this.diagnostics.fileError = `HTTP ${response.status}`
+        else this.diagnostics.sfxError = `HTTP ${response.status}`
         return null
       }
       // A missing file on a static host can answer with the SPA fallback (HTML).
       // Decoding that would only produce noise, so treat it as a missing file.
       const type = response.headers.get('content-type') ?? ''
       if (type && !type.startsWith('audio/') && !type.includes('octet-stream')) {
-        this.diagnostics.fileError = `не тот формат (${type})`
+        if (kind === 'music') this.diagnostics.fileError = `не тот формат (${type})`
+        else this.diagnostics.sfxError = `не тот формат (${type})`
         return null
       }
       const raw = await response.arrayBuffer()
       this.rawBuffers.set(src, raw)
       return raw
     } catch (error) {
-      this.diagnostics.fileError = error instanceof Error ? error.message : String(error)
+      if (kind === 'music') this.diagnostics.fileError = error instanceof Error ? error.message : String(error)
+      else this.diagnostics.sfxError = error instanceof Error ? error.message : String(error)
       return null
     }
   }
@@ -390,7 +393,7 @@ export class AudioEngine {
     if (!track.src) return
     if (this.buffers.has(track.src) || this.rawBuffers.has(track.src)) return
     if (this.missing.has(track.src)) return
-    void this.fetchRaw(track.src)
+    void this.fetchRaw(track.src, 'music')
   }
 
   async playSfx(definition: SfxDefinition): Promise<void> {
